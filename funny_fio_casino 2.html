@@ -1,0 +1,1769 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Генератор смешных ФИО — Казино-автомат</title>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Rubik:wght@500;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --gold-main: #ffd700;
+      --gold-dark: #b8860b;
+      --neon-pink: #ff007f;
+      --neon-cyan: #00f3ff;
+      --neon-green: #39ff14;
+      --bg-dark: #0a0614;
+      --slot-bg: #150928;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      background-image: 
+        radial-gradient(circle at 50% 20%, rgba(255, 0, 127, 0.2) 0%, transparent 60%),
+        radial-gradient(circle at 80% 80%, rgba(0, 243, 255, 0.15) 0%, transparent 50%),
+        linear-gradient(rgba(10, 6, 20, 0.95), rgba(10, 6, 20, 0.98)),
+        repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.03) 2px, rgba(255,255,255,0.03) 4px);
+      color: #fff;
+      font-family: 'Rubik', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 15px;
+      overflow-x: hidden;
+    }
+
+    .canvas-confetti {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 100;
+    }
+
+    /* Верхняя панель */
+    .top-bar {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+      z-index: 10;
+    }
+
+    .retro-btn {
+      background: #1b1035;
+      border: 2px solid var(--neon-cyan);
+      color: var(--neon-cyan);
+      font-family: 'Press Start 2P', cursive;
+      font-size: 10px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      box-shadow: 0 0 10px rgba(0, 243, 255, 0.3);
+      transition: all 0.2s;
+    }
+
+    .retro-btn:active, .retro-btn.active {
+      background: var(--neon-cyan);
+      color: #000;
+      box-shadow: 0 0 15px var(--neon-cyan);
+    }
+
+    .gender-selector {
+      display: flex;
+      background: #150928;
+      border: 2px solid var(--gold-main);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .gender-btn {
+      background: transparent;
+      border: none;
+      color: #aaa;
+      padding: 6px 12px;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .gender-btn.active {
+      background: var(--gold-main);
+      color: #111;
+    }
+
+    /* Корпус слот-машины */
+    .slot-machine {
+      width: 100%;
+      max-width: 760px;
+      background: linear-gradient(145deg, #2a0845, #120422);
+      border: 6px solid var(--gold-main);
+      border-radius: 28px;
+      padding: 24px 20px;
+      box-shadow: 
+        0 0 35px rgba(255, 215, 0, 0.4),
+        0 15px 40px rgba(0, 0, 0, 0.8),
+        inset 0 0 20px rgba(255, 0, 127, 0.5);
+      position: relative;
+      z-index: 5;
+    }
+
+    /* Мигающие лампочки */
+    .bulbs-row {
+      display: flex;
+      justify-content: space-around;
+      margin-bottom: 14px;
+    }
+
+    .bulb {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #444;
+      transition: all 0.2s;
+    }
+
+    .bulb.glow-1 { background: #ff0055; box-shadow: 0 0 10px #ff0055; }
+    .bulb.glow-2 { background: #ffd700; box-shadow: 0 0 10px #ffd700; }
+    .bulb.glow-3 { background: #00f3ff; box-shadow: 0 0 10px #00f3ff; }
+    .bulb.glow-4 { background: #39ff14; box-shadow: 0 0 10px #39ff14; }
+
+    .header-box {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .main-title {
+      font-family: 'Press Start 2P', cursive;
+      font-size: clamp(16px, 4vw, 25px);
+      color: var(--gold-main);
+      text-shadow: 
+        0 0 10px var(--gold-main),
+        3px 3px 0px #b80000;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+      animation: pulseTitle 2s infinite alternate;
+    }
+
+    @keyframes pulseTitle {
+      0% { filter: drop-shadow(0 0 3px rgba(255,215,0,0.6)); }
+      100% { filter: drop-shadow(0 0 15px rgba(255,0,127,0.9)); }
+    }
+
+    .subtitle {
+      font-size: 13px;
+      color: #ff99cc;
+      text-shadow: 0 0 8px rgba(255, 0, 127, 0.7);
+    }
+
+    /* Барабаны */
+    .reels-container {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      background: #090214;
+      border: 4px solid #3d1466;
+      border-radius: 18px;
+      padding: 16px 12px;
+      box-shadow: inset 0 0 25px rgba(0,0,0,0.9);
+      position: relative;
+    }
+
+    .reel-box {
+      background: linear-gradient(180deg, #180930 0%, #29124e 50%, #180930 100%);
+      border: 2px solid var(--neon-cyan);
+      border-radius: 12px;
+      height: 120px;
+      overflow: hidden;
+      position: relative;
+      box-shadow: inset 0 0 15px rgba(0,0,0,0.8), 0 0 12px rgba(0, 243, 255, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .reel-box::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; height: 35%;
+      background: linear-gradient(180deg, rgba(255,255,255,0.18), transparent);
+      pointer-events: none;
+      z-index: 5;
+    }
+
+    .reel-label {
+      position: absolute;
+      top: 4px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: 'Press Start 2P', cursive;
+      font-size: 7px;
+      color: #bbb;
+      background: rgba(0,0,0,0.6);
+      padding: 2px 6px;
+      border-radius: 4px;
+      z-index: 6;
+      white-space: nowrap;
+    }
+
+    .reel-strip {
+      width: 100%;
+      text-align: center;
+      transition: transform 0.1s linear;
+      will-change: transform;
+    }
+
+    .reel-item {
+      height: 120px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: clamp(14px, 2.2vw, 19px);
+      font-weight: 900;
+      color: #fff;
+      padding: 0 8px;
+      word-break: break-word;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+    }
+
+    .reel-item.highlight {
+      color: var(--gold-main);
+      text-shadow: 0 0 15px var(--gold-main), 0 0 25px #ff007f;
+      transform: scale(1.05);
+    }
+
+    /* Результаты */
+    .result-announcement {
+      margin-top: 18px;
+      min-height: 80px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+
+    .badge-label {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 11px;
+      color: var(--neon-green);
+      text-shadow: 0 0 8px var(--neon-green);
+      margin-bottom: 6px;
+      opacity: 0;
+      transform: translateY(-5px);
+      transition: all 0.4s ease;
+    }
+
+    .badge-label.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .title-banner {
+      font-size: clamp(13px, 2.8vw, 16px);
+      font-weight: 700;
+      color: #fff;
+      background: rgba(255, 0, 127, 0.2);
+      border: 1px dashed var(--neon-pink);
+      padding: 8px 16px;
+      border-radius: 8px;
+      box-shadow: 0 0 15px rgba(255, 0, 127, 0.3);
+      opacity: 0;
+      transform: scale(0.9);
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .title-banner.show {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    /* Кнопки управления */
+    .controls {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      margin-top: 15px;
+    }
+
+    .spin-button {
+      background: linear-gradient(180deg, #ff3300 0%, #b30000 70%, #660000 100%);
+      color: #fff;
+      font-family: 'Press Start 2P', cursive;
+      font-size: clamp(14px, 3.5vw, 22px);
+      padding: 18px 45px;
+      border: 4px solid var(--gold-main);
+      border-radius: 50px;
+      cursor: pointer;
+      box-shadow: 
+        0 8px 0 #4a0000,
+        0 12px 25px rgba(255, 0, 0, 0.6),
+        inset 0 4px 6px rgba(255, 255, 255, 0.4);
+      transition: all 0.1s;
+      letter-spacing: 1px;
+    }
+
+    .spin-button:hover:not(:disabled) {
+      filter: brightness(1.15);
+      transform: translateY(-2px);
+    }
+
+    .spin-button:active:not(:disabled) {
+      transform: translateY(6px);
+      box-shadow: 0 2px 0 #4a0000, 0 5px 15px rgba(255, 0, 0, 0.4);
+    }
+
+    .spin-button:disabled {
+      filter: grayscale(0.7) opacity(0.7);
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 10px;
+    }
+
+    .sub-btn {
+      background: #1e1338;
+      border: 1px solid #7928ca;
+      color: #e2d9f3;
+      padding: 8px 14px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: 0.2s;
+    }
+
+    .sub-btn:hover {
+      background: #321f5e;
+      border-color: var(--neon-cyan);
+      color: #fff;
+    }
+
+    /* Подвал / Статистика */
+    .footer-stats {
+      margin-top: 20px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      padding-top: 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      font-size: 13px;
+    }
+
+    .stats-row {
+      display: flex;
+      justify-content: space-between;
+      color: #aaa;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .history-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .history-item {
+      background: rgba(255,255,255,0.03);
+      padding: 6px 10px;
+      border-radius: 6px;
+      border-left: 3px solid var(--neon-cyan);
+      font-size: 12px;
+      color: #ddd;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    /* Тост */
+    .toast {
+      position: fixed;
+      bottom: 25px;
+      background: var(--neon-green);
+      color: #000;
+      padding: 10px 20px;
+      border-radius: 30px;
+      font-weight: 900;
+      font-size: 13px;
+      box-shadow: 0 0 20px var(--neon-green);
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.3s;
+      pointer-events: none;
+      z-index: 500;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* =====================================================================
+       МОДАЛЬНЫЕ ОКНА МИНИ-ИГР (КРЕСТИКИ-НОЛИКИ И ТЕТРИС)
+       ===================================================================== */
+    .game-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(8, 3, 18, 0.94);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 15px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+
+    .game-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-card {
+      background: linear-gradient(150deg, #240a3e, #10031d);
+      border: 4px solid var(--neon-pink);
+      border-radius: 24px;
+      padding: 22px 18px;
+      width: 100%;
+      max-width: 440px;
+      box-shadow: 0 0 40px rgba(255, 0, 127, 0.6), inset 0 0 25px rgba(0, 243, 255, 0.3);
+      text-align: center;
+      position: relative;
+      animation: modalPop 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    @keyframes modalPop {
+      0% { transform: scale(0.7) rotate(-2deg); }
+      100% { transform: scale(1) rotate(0deg); }
+    }
+
+    .modal-badge {
+      display: inline-block;
+      font-family: 'Press Start 2P', cursive;
+      font-size: 10px;
+      background: var(--gold-main);
+      color: #000;
+      padding: 5px 12px;
+      border-radius: 20px;
+      margin-bottom: 10px;
+      box-shadow: 0 0 12px var(--gold-main);
+    }
+
+    .modal-title {
+      font-family: 'Press Start 2P', cursive;
+      font-size: clamp(13px, 3.2vw, 17px);
+      color: var(--neon-cyan);
+      margin-bottom: 8px;
+      text-shadow: 0 0 10px var(--neon-cyan);
+    }
+
+    .modal-desc {
+      font-size: 12px;
+      color: #ccc;
+      margin-bottom: 16px;
+      line-height: 1.4;
+    }
+
+    /* СТИЛИ: КРЕСТИКИ-НОЛИКИ */
+    .ttt-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      width: 250px;
+      height: 250px;
+      margin: 0 auto 16px auto;
+    }
+
+    .ttt-cell {
+      background: #17092c;
+      border: 3px solid #6b21a8;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 42px;
+      font-weight: 900;
+      cursor: pointer;
+      color: #fff;
+      transition: all 0.15s;
+    }
+
+    .ttt-cell:hover:not(.taken) {
+      background: #2f1359;
+      border-color: var(--neon-cyan);
+      box-shadow: 0 0 12px rgba(0, 243, 255, 0.4);
+    }
+
+    .ttt-cell.x {
+      color: var(--neon-pink);
+      text-shadow: 0 0 15px var(--neon-pink);
+    }
+
+    .ttt-cell.o {
+      color: var(--neon-cyan);
+      text-shadow: 0 0 15px var(--neon-cyan);
+    }
+
+    .ttt-status {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 11px;
+      color: var(--gold-main);
+      min-height: 24px;
+      margin-bottom: 14px;
+    }
+
+    /* СТИЛИ: ТЕТРИС */
+    .tetris-card {
+      max-width: 480px;
+      padding: 16px 14px;
+    }
+
+    .tetris-board-wrap {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+
+    #tetrisCanvas {
+      background: #0b0217;
+      border: 3px solid var(--neon-cyan);
+      border-radius: 8px;
+      box-shadow: 0 0 20px rgba(0, 243, 255, 0.4);
+      display: block;
+    }
+
+    .tetris-sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      font-family: 'Press Start 2P', cursive;
+      font-size: 9px;
+      text-align: left;
+    }
+
+    .tetris-stat-box {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid #7928ca;
+      border-radius: 6px;
+      padding: 8px;
+    }
+
+    .tetris-stat-box span {
+      display: block;
+      color: #888;
+      margin-bottom: 4px;
+    }
+
+    .tetris-stat-box strong {
+      color: var(--neon-green);
+      font-size: 11px;
+    }
+
+    /* Кнопки управления Тетрисом для сенсорных экранов */
+    .tetris-controls {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      margin-top: 10px;
+      margin-bottom: 12px;
+    }
+
+    .t-btn {
+      background: #251246;
+      border: 2px solid var(--neon-pink);
+      color: #fff;
+      font-family: 'Press Start 2P', cursive;
+      font-size: 13px;
+      padding: 12px 6px;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0 4px 0 #4a0033;
+    }
+
+    .t-btn:active {
+      transform: translateY(3px);
+      box-shadow: 0 1px 0 #4a0033;
+    }
+
+    .resume-btn {
+      background: linear-gradient(180deg, #00e676, #00897b);
+      color: #000;
+      font-family: 'Press Start 2P', cursive;
+      font-size: 11px;
+      padding: 14px 22px;
+      border: 3px solid var(--gold-main);
+      border-radius: 30px;
+      cursor: pointer;
+      box-shadow: 0 0 15px rgba(0, 230, 118, 0.6);
+      width: 100%;
+      margin-top: 6px;
+      transition: all 0.15s;
+    }
+
+    .resume-btn:hover {
+      filter: brightness(1.15);
+      transform: scale(1.02);
+    }
+
+    @media (max-width: 580px) {
+      .reels-container {
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+      .reel-box {
+        height: 70px;
+      }
+      .reel-item {
+        height: 70px;
+        font-size: 15px;
+      }
+      .ttt-grid {
+        width: 220px;
+        height: 220px;
+      }
+      .ttt-cell {
+        font-size: 34px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <canvas class="canvas-confetti" id="confettiCanvas"></canvas>
+
+  <!-- Верхняя панель -->
+  <div class="top-bar">
+    <button class="retro-btn" id="musicToggleBtn">МУЗЫКА: ВЫКЛ 🎵</button>
+    <button class="retro-btn" id="soundToggleBtn">ЗВУКИ: ВКЛ 🔊</button>
+    
+    <div class="gender-selector">
+      <button class="gender-btn active" data-gender="all">Все</button>
+      <button class="gender-btn" data-gender="m">Муж</button>
+      <button class="gender-btn" data-gender="f">Жен</button>
+    </div>
+  </div>
+
+  <!-- Корпус слота -->
+  <main class="slot-machine">
+    <div class="bulbs-row" id="bulbsContainer"></div>
+
+    <div class="header-box">
+      <h1 class="main-title">КТО ТЫ СЕГОДНЯ?!</h1>
+      <p class="subtitle">🎰 Казино случайных личностей • Судьба уже всё решила! 🎰</p>
+    </div>
+
+    <!-- Барабаны -->
+    <div class="reels-container">
+      <div class="reel-box" id="reelBoxLast">
+        <span class="reel-label">ФАМИЛИЯ</span>
+        <div class="reel-strip" id="reelStripLast">
+          <div class="reel-item">???</div>
+        </div>
+      </div>
+
+      <div class="reel-box" id="reelBoxFirst">
+        <span class="reel-label">ИМЯ</span>
+        <div class="reel-strip" id="reelStripFirst">
+          <div class="reel-item">???</div>
+        </div>
+      </div>
+
+      <div class="reel-box" id="reelBoxMiddle">
+        <span class="reel-label">ОТЧЕСТВО</span>
+        <div class="reel-strip" id="reelStripMiddle">
+          <div class="reel-item">???</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="result-announcement">
+      <div class="badge-label" id="resultBadge">🎉 ВАША НОВАЯ ЛИЧНОСТЬ: 🎉</div>
+      <div class="title-banner" id="resultTitle">Нажмите «КРУТИТЬ!», чтобы узнать судьбу</div>
+    </div>
+
+    <div class="controls">
+      <button class="spin-button" id="spinBtn">КРУТИТЬ! 🎰</button>
+
+      <div class="action-buttons">
+        <button class="sub-btn" id="copyBtn">📋 Скопировать ФИО</button>
+        <button class="sub-btn" id="shareBtn">🚀 Поделиться</button>
+      </div>
+    </div>
+
+    <div class="footer-stats">
+      <div class="stats-row">
+        <span>Круток совершено: <strong id="spinCountText" style="color: var(--neon-cyan)">0</strong></span>
+        <span>Сюрпризы: 3-я крутка — ❌⭕, 10-я — 🕹️ Тетрис!</span>
+      </div>
+      <div>
+        <div style="margin-bottom: 6px; font-weight: 700; color: #888;">Последние выпавшие комбинации:</div>
+        <ul class="history-list" id="historyList">
+          <li style="color: #666; font-size: 11px;">Пока пусто... испытай удачу!</li>
+        </ul>
+      </div>
+    </div>
+  </main>
+
+  <!-- =====================================================================
+       МОДАЛЬНОЕ ОКНО 1: КРЕСТИКИ-НОЛИКИ (Срабатывает после 3-й крутки)
+       ===================================================================== -->
+  <div class="game-overlay" id="tttOverlay">
+    <div class="modal-card">
+      <div class="modal-badge">ВНЕЗАПНЫЙ РАУНД!</div>
+      <h2 class="modal-title">КРЕСТИКИ-НОЛИКИ! ❌⭕</h2>
+      <p class="modal-desc">Автомат заклинило от величия вашего имени! Обыграйте крупье, чтобы разблокировать вращения дальше!</p>
+      
+      <div class="ttt-grid" id="tttGrid">
+        <div class="ttt-cell" data-idx="0"></div>
+        <div class="ttt-cell" data-idx="1"></div>
+        <div class="ttt-cell" data-idx="2"></div>
+        <div class="ttt-cell" data-idx="3"></div>
+        <div class="ttt-cell" data-idx="4"></div>
+        <div class="ttt-cell" data-idx="5"></div>
+        <div class="ttt-cell" data-idx="6"></div>
+        <div class="ttt-cell" data-idx="7"></div>
+        <div class="ttt-cell" data-idx="8"></div>
+      </div>
+
+      <div class="ttt-status" id="tttStatus">Ваш ход: ❌</div>
+
+      <button class="resume-btn" id="tttResumeBtn" style="display: none;">ПРОДОЛЖИТЬ КРУТИТЬ КАЗИНО! 🎰</button>
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       МОДАЛЬНОЕ ОКНО 2: 8-BIT ТЕТРИС (Срабатывает после 10-й крутки)
+       ===================================================================== -->
+  <div class="game-overlay" id="tetrisOverlay">
+    <div class="modal-card tetris-card">
+      <div class="modal-badge">ДЖЕКПОТ 10 УРОВНЯ!</div>
+      <h2 class="modal-title">СЕКРЕТНЫЙ ТЕТРИС 🕹️</h2>
+      <p class="modal-desc" style="margin-bottom: 8px;">10 круток позади! Разгрузи диванную энергию в настоящем ретро-тетрисе!</p>
+
+      <div class="tetris-board-wrap">
+        <canvas id="tetrisCanvas" width="200" height="360"></canvas>
+        <div class="tetris-sidebar">
+          <div class="tetris-stat-box">
+            <span>ОЧКИ:</span>
+            <strong id="tetrisScore">0</strong>
+          </div>
+          <div class="tetris-stat-box">
+            <span>ЛИНИИ:</span>
+            <strong id="tetrisLines">0</strong>
+          </div>
+          <div class="tetris-stat-box">
+            <span>УПРАВЛ:</span>
+            <span style="color:#aaa; font-size: 7px; line-height: 1.3;">Стрелки или кнопки внизу</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Сенсорное управление -->
+      <div class="tetris-controls">
+        <button class="t-btn" id="tBtnLeft">⬅️</button>
+        <button class="t-btn" id="tBtnRotate">🔄</button>
+        <button class="t-btn" id="tBtnRight">➡️</button>
+        <button class="t-btn" id="tBtnDrop">⬇️</button>
+      </div>
+
+      <button class="resume-btn" id="tetrisExitBtn">ВЕРНУТЬСЯ К КАЗИНО 🎰</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">Скопировано!</div>
+
+  <script>
+  /* =====================================================================
+     БАЗА ДАННЫХ: МУЖСКИЕ И ЖЕНСКИЕ ФИО + ТИТУЛЫ (Более 70+ вариантов)
+     ===================================================================== */
+  const DB = {
+    male: {
+      lastNames: [
+        "Пупкин", "Обалдуев", "Шалопаев", "Чебуреков", "Колбаскин", "Тараканов",
+        "Барабашкин", "Криворучкин", "Хохотунов", "Непоймихто", "Капустин", "Бездельников",
+        "Чудаков", "Перепуткин", "Зажигалкин", "Раздолбаев", "Хрюндель", "Крендельман",
+        "Обормотов", "Непоседов", "Пельмешкин", "Шаурмян", "Дурко", "Почесухин",
+        "Супогрызов", "Хитрожопенко", "Косяков", "Тугодумов", "Балаболкин", "Прокрастинат",
+        "Борщев", "Шнобелев", "Холодильников", "Пожиралов", "Диванодавов", "Глазовыколупыватель",
+        "Взяткин", "Ворчунов", "Соплежуев", "Опоздунов", "Пижамкин", "Шнурков", "Тапочкин",
+        "Котлеткин", "Ухочесов", "Свистулькин", "Лодырев", "Соннов", "Пузочесов", "Бутербродов",
+        "Чайников", "Пончиков", "Гречкин", "Карасиков", "Вареников", "Крендельков", "Свиноедов",
+        "Шуруповертов", "Пылесосов", "Кастрюлькин", "Утюгов", "Балалайкин", "Огурцов",
+        "Помидорин", "Сырников", "Чесноков", "Блинов", "Пирожков", "Булкин", "Хрустяшкин"
+      ],
+      firstNames: [
+        "Борис", "Геннадий", "Анатолий", "Валерий", "Прохор", "Савелий", "Федот",
+        "Трофим", "Пафнутий", "Архип", "Епифан", "Добрыня", "Кузьма", "Потап",
+        "Гаврила", "Харитон", "Порфирий", "Митрофан", "Ферапонт", "Спиридон",
+        "Акакий", "Власий", "Дормидонт", "Евлампий", "Лучезар", "Никанор", "Пантелеймон",
+        "Фома", "Ювеналий", "Казимир", "Онуфрий", "Тарас", "Фаддей", "Эраст",
+        "Ипполит", "Венедикт", "Клим", "Варфоломей", "Аристарх", "Михей", "Антип",
+        "Никифор", "Агафон", "Поликарп", "Анисим", "Панкрат", "Харлампий", "Герасим",
+        "Сидор", "Фрол", "Савва", "Макар", "Еремей", "Гордей", "Тихон", "Филимон",
+        "Аверьян", "Платон", "Лаврентий", "Матвей", "Феофан", "Селиван", "Кондрат",
+        "Корней", "Лука", "Наум", "Родион", "Тимофей", "Устин", "Ксенофонт"
+      ],
+      middleNames: [
+        "Петрович", "Иванович", "Сидорович", "Борисович", "Геннадьевич", "Анатольевич",
+        "Прохорович", "Федотович", "Трофимович", "Кузьмич", "Потапыч", "Гаврилович",
+        "Пафнутьевич", "Архипович", "Митрофанович", "Спиридонович", "Обалдуевич", "Чебурекович",
+        "Колбасович", "Хохотунович", "Акакиевич", "Дормидонтович", "Евлампиевич", "Никанорович",
+        "Пантелеймонович", "Фомич", "Ювеналиевич", "Казимирович", "Онуфриевич", "Тарасович",
+        "Эрастович", "Ипполитович", "Венедиктович", "Варфоломеевич", "Аристархович", "Михеевич",
+        "Никифорович", "Агафонович", "Поликарпович", "Анисимович", "Панкратович", "Харлампиевич",
+        "Герасимович", "Сидорович", "Фролович", "Саввич", "Макарович", "Еремеевич",
+        "Гордеевич", "Тихонович", "Филимонович", "Платонович", "Лаврентьевич", "Феофанович",
+        "Селиванович", "Кондратьевич", "Корнеевич", "Лукич", "Наумович", "Родионович",
+        "Устинович", "Ксенофонтович", "Пупкович", "Пельмешевич", "Косякович", "Прокрастинатович",
+        "Шнобелевич", "Борщевич", "Диванодавович", "Пижамкович"
+      ]
+    },
+    female: {
+      lastNames: [
+        "Пупкина", "Обалдуева", "Шалопаева", "Чебурекова", "Колбаскина", "Тараканова",
+        "Барабашкина", "Криворучкина", "Хохотунова", "Непоймихто", "Капустина", "Бездельникова",
+        "Чудакова", "Перепуткина", "Зажигалкина", "Раздолбаева", "Хрюндель", "Крендельман",
+        "Обормотова", "Непоседова", "Пельмешкина", "Шаурмян", "Дурко", "Почесухина",
+        "Супогрызова", "Косякова", "Тугодумова", "Балаболкина", "Борщева", "Шнобелева",
+        "Холодильникова", "Диванодавова", "Взяткина", "Ворчунова", "Опоздунова", "Пижамкина",
+        "Шнуркова", "Тапочкина", "Котлеткина", "Свистулькина", "Лодырева", "Соннова",
+        "Бутербродова", "Чайникова", "Пончикова", "Гречкина", "Карасикова", "Вареникова",
+        "Кастрюлькина", "Утюгова", "Балалайкина", "Огурцова", "Помидорина", "Сырникова",
+        "Блинова", "Пирожкова", "Булкина", "Хрустяшкина", "Шоколадкина", "Зефиркина",
+        "Сгущеночкина", "Карамелькина", "Плюшкина", "Ватрушкина", "Пышкина", "Сметанкина",
+        "Оладушкина", "Сухарикова", "Мармеладова", "Конфеткина"
+      ],
+      firstNames: [
+        "Агриппина", "Пульхерия", "Глафира", "Евдокия", "Клавдия", "Прасковья", "Матрена",
+        "Акулина", "Марфа", "Феврония", "Пелагея", "Варвара", "Авдотья", "Ефросинья",
+        "Серафима", "Степанида", "Устинья", "Ираида", "Гликерия", "Капитолина",
+        "Олимпиада", "Фоминична", "Алевтина", "Домна", "Зинаида", "Изольда", "Клеопатра",
+        "Матильда", "Нонна", "Октябрина", "Павлина", "Раиса", "Таисия", "Фаина",
+        "Харитинья", "Христина", "Элеонора", "Юзефа", "Ядвига", "Аглая", "Анфиса",
+        "Василиса", "Гортензия", "Дарья", "Евпраксия", "Жозефина", "Зоя", "Исидора",
+        "Кира", "Лукерья", "Меланья", "Неонила", "Павла", "Руфина", "Сусанна",
+        "Тамара", "Ульяна", "Феодора", "Хиония", "Чеслава", "Шарлотта", "Эльвира",
+        "Юстина", "Ярослава", "Брунгильда", "Виолетта", "Гертруда", "Дездемона", "Кларисса"
+      ],
+      middleNames: [
+        "Петровна", "Ивановна", "Сидоровна", "Борисовна", "Геннадьевна", "Анатольевна",
+        "Прохоровна", "Федотовна", "Трофимовна", "Кузьминична", "Потаповна", "Гавриловна",
+        "Пафнутьевна", "Архиповна", "Митрофановна", "Спиридоновна", "Обалдуевна", "Чебурековна",
+        "Колбасовна", "Хохотуновна", "Акакиевна", "Дормидонтовна", "Евлампиевна", "Никаноровна",
+        "Пантелеймоновна", "Фоминична", "Ювеналиевна", "Казимировна", "Онуфриевна", "Тарасовна",
+        "Эрастовна", "Ипполитовна", "Венедиктовна", "Варфоломеевна", "Аристарховна", "Михеевна",
+        "Никифоровна", "Агафоновна", "Поликарповна", "Анисимовна", "Панкратовна", "Харлампиевна",
+        "Герасимовна", "Фроловна", "Саввична", "Макаровна", "Еремеевна", "Гордеевна",
+        "Тихоновна", "Филимоновна", "Платоновна", "Лаврентьевна", "Феофановна", "Селивановна",
+        "Кондратьевна", "Корнеевна", "Лукинична", "Наумовна", "Родионовна", "Устиновна",
+        "Ксенофонтовна", "Пупковна", "Пельмешевна", "Косяковна", "Прокрастинатовна", "Шнобелевна",
+        "Борщевна", "Диванодавовна", "Пижамковна", "Чайниковна"
+      ]
+    },
+    titles: [
+      "Главный специалист по перекладыванию ответственности",
+      "Почётный академик диванных наук и горизонтального мышления",
+      "Заслуженный мастер внезапных исчезновений во время аврала",
+      "Генеральный директор по ничегонеделанию и созерцанию потолка",
+      "Профессор великого пятиминутного перекура длиною в смену",
+      "Легенда районного масштаба и гроза бесплатных дегустаций",
+      "Магистр поиска виноватых 80-го уровня",
+      "Начальник отдела стратегического распития чая с печеньками",
+      "Повелитель случайных решений и спонтанных покупок на маркетплейсах",
+      "Эксперт международного класса по советам, которых никто не просил",
+      "Верховный жрец откладывания дел на следующий понедельник",
+      "Маршал лени первой гильдии с правом ношения махрового халата",
+      "Заслуженный дегустатор бабушкиных пирожков и борща",
+      "Старший координатор паники в любой непонятной ситуации",
+      "Консультант по созданию бурной видимости кипучей деятельности",
+      "Архитектор воздушных замков и грандиозных планов на завтра",
+      "Чемпион двора по спортивному лежанию на диване со смартфоном",
+      "Хранитель священного пакета с другими пакетами",
+      "Командор диванного флота и покоритель кухонных просторов",
+      "Генерал-майор ночных вылазок к холодильнику за колбасой",
+      "Министр забывания паролей и открывания 70 вкладок в браузере",
+      "Главный инспектор по проверке мягкости подушек",
+      "Доктор околонаучных споров в комментариях в 3 часа ночи",
+      "Великий заклинатель будильников с отсрочкой 'ещё пять минуточек'",
+      "Рыцарь ордена ленивого перелистывания коротких видео",
+      "Гроссмейстер игры в прятки от начальства в рабочие часы",
+      "Председатель профсоюза любителей поспать в обеденный перерыв",
+      "Шеф-повар по приготовлению лапши быстрого приготовления мишлен",
+      "Старший мастер вздохов тяжести бытия при подъёме с кресла",
+      "Повелитель пульта от телевизора и вечный искатель второго носка",
+      "Амбассадор фразы: 'Да я только на секундочку прилёг'",
+      "Заслуженный испытатель прочности офисных стульев",
+      "Художественный руководитель хора недовольных утренних звуков",
+      "Бригадир строителей планов, которым не суждено сбыться",
+      "Главнокомандующий войсками домашних тапочек",
+      "Секретарь комиссии по торжественному мытью одной кружки в день",
+      "Эксперт по вздохам со смыслом на семейных застольях",
+      "Президент ассоциации поиска очков, которые надеты на лоб",
+      "Главный смотритель закипания чайника без отрыва взгляда",
+      "Специалист по открыванию холодильника просто чтобы посмотреть",
+      "Дипломированный эксперт по прогнозированию погоды по ломоте в колене",
+      "Король драматических пауз перед ответом на простой вопрос",
+      "Академик по собиранию крошек со стола ладошкой",
+      "Мастер спорта по переключению каналов за полсекунды",
+      "Верховный судья качества магазинных пельменей",
+      "Генеральный конструктор пирамид из немытой посуды",
+      "Инструктор по правильному заворачиванию в плед в форме сосиски",
+      "Хранитель тайн о том, куда деваются чайные ложки",
+      "Главный шпион по подглядыванию в окно за паркующимися соседями",
+      "Почётный донор хорошего настроения и глупых шуток",
+      "Капитан очевидность высшей квалификационной категории",
+      "Народный артист утреннего ворчания на будильник",
+      "Заведующий складом нереализованных амбиций и пустых коробок",
+      "Главный конструктор ленивых маршрутов от кровати до кухни",
+      "Заслуженный дрессировщик домашнего кота на расстоянии взгляда"
+    ]
+  };
+
+  /* =====================================================================
+     ЗВУКОВОЙ ДВИЖОК: 8-BIT СИНТЕЗАТОР (Калинка + звуки слота)
+     ===================================================================== */
+  class SoundEngine {
+    constructor() {
+      this.ctx = null;
+      this.soundEnabled = true;
+      this.musicEnabled = false;
+      this.musicInterval = null;
+      this.currentNoteIndex = 0;
+      
+      this.kalinkaMelody = [
+        { f: 659.25, d: 0.28 }, { f: 587.33, d: 0.28 }, { f: 523.25, d: 0.28 },
+        { f: 493.88, d: 0.28 }, { f: 523.25, d: 0.28 }, { f: 587.33, d: 0.28 },
+        { f: 659.25, d: 0.56 }, { f: 587.33, d: 0.28 }, { f: 523.25, d: 0.28 },
+        { f: 440.00, d: 0.56 }, { f: 0,      d: 0.15 },
+        { f: 659.25, d: 0.28 }, { f: 698.46, d: 0.28 }, { f: 783.99, d: 0.28 },
+        { f: 659.25, d: 0.28 }, { f: 587.33, d: 0.28 }, { f: 523.25, d: 0.28 },
+        { f: 493.88, d: 0.28 }, { f: 440.00, d: 0.56 }, { f: 0,      d: 0.20 },
+        { f: 440.00, d: 0.18 }, { f: 493.88, d: 0.18 }, { f: 523.25, d: 0.18 },
+        { f: 587.33, d: 0.18 }, { f: 659.25, d: 0.36 }, { f: 587.33, d: 0.18 },
+        { f: 523.25, d: 0.18 }, { f: 493.88, d: 0.36 }, { f: 523.25, d: 0.18 },
+        { f: 587.33, d: 0.18 }, { f: 659.25, d: 0.36 }, { f: 587.33, d: 0.18 },
+        { f: 523.25, d: 0.18 }, { f: 440.00, d: 0.50 }, { f: 0,      d: 0.30 }
+      ];
+    }
+
+    initCtx() {
+      if (!this.ctx) {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        this.ctx = new AudioCtx();
+      }
+      if (this.ctx.state === 'suspended') {
+        this.ctx.resume();
+      }
+    }
+
+    playTone(freq, type, duration, vol = 0.1, delay = 0) {
+      if (!this.soundEnabled || freq <= 0) return;
+      this.initCtx();
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, this.ctx.currentTime + delay);
+
+      gain.gain.setValueAtTime(vol, this.ctx.currentTime + delay);
+      gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + delay + duration);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc.start(this.ctx.currentTime + delay);
+      osc.stop(this.ctx.currentTime + delay + duration);
+    }
+
+    playClick() {
+      this.playTone(320 + Math.random() * 180, 'square', 0.05, 0.07);
+    }
+
+    playReelLock() {
+      this.playTone(587.33, 'triangle', 0.12, 0.2);
+      this.playTone(880, 'square', 0.15, 0.14, 0.04);
+    }
+
+    playFanfare() {
+      const chords = [523.25, 659.25, 783.99, 1046.50];
+      chords.forEach((note, i) => {
+        this.playTone(note, 'square', 0.3, 0.15, i * 0.08);
+      });
+    }
+
+    playLaugh() {
+      if (!this.soundEnabled) return;
+      this.initCtx();
+      const syllables = 5;
+      for (let i = 0; i < syllables; i++) {
+        const startTime = this.ctx.currentTime + i * 0.18;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'sawtooth';
+        const baseFreq = 260 + Math.random() * 80;
+        osc.frequency.setValueAtTime(baseFreq + 120, startTime);
+        osc.frequency.exponentialRampToValueAtTime(baseFreq - 40, startTime + 0.14);
+
+        gain.gain.setValueAtTime(0.18, startTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.14);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.start(startTime);
+        osc.stop(startTime + 0.15);
+      }
+    }
+
+    toggleMusic(forceState) {
+      this.initCtx();
+      this.musicEnabled = forceState !== undefined ? forceState : !this.musicEnabled;
+      
+      if (!this.musicEnabled) {
+        if (this.musicInterval) clearTimeout(this.musicInterval);
+        this.musicInterval = null;
+        return false;
+      } else {
+        this.currentNoteIndex = 0;
+        this.scheduleNextKalinkaNote();
+        return true;
+      }
+    }
+
+    scheduleNextKalinkaNote() {
+      if (!this.musicEnabled) return;
+      
+      const item = this.kalinkaMelody[this.currentNoteIndex];
+      if (item.f > 0 && this.soundEnabled) {
+        this.playTone(item.f, 'square', item.d * 0.9, 0.05);
+        this.playTone(item.f / 2, 'triangle', item.d * 0.8, 0.04);
+      }
+
+      this.currentNoteIndex = (this.currentNoteIndex + 1) % this.kalinkaMelody.length;
+      this.musicInterval = setTimeout(() => {
+        this.scheduleNextKalinkaNote();
+      }, item.d * 1000);
+    }
+  }
+
+  /* =====================================================================
+     ГРАФИКА: КОНФЕТТИ
+     ===================================================================== */
+  class ConfettiEngine {
+    constructor(canvas) {
+      this.canvas = canvas;
+      this.ctx = canvas.getContext('2d');
+      this.particles = [];
+      this.animId = null;
+      this.resize();
+      window.addEventListener('resize', () => this.resize());
+    }
+
+    resize() {
+      this.canvas.width = window.innerWidth;
+      this.canvas.height = window.innerHeight;
+    }
+
+    fire() {
+      const colors = ['#ffd700', '#ff007f', '#00f3ff', '#39ff14', '#ffffff', '#ff9900'];
+      for (let i = 0; i < 90; i++) {
+        this.particles.push({
+          x: this.canvas.width / 2,
+          y: this.canvas.height * 0.65,
+          vx: (Math.random() - 0.5) * 22,
+          vy: -Math.random() * 16 - 6,
+          size: Math.random() * 8 + 5,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          rotation: Math.random() * 360,
+          vRot: (Math.random() - 0.5) * 12,
+          alpha: 1
+        });
+      }
+      if (!this.animId) this.loop();
+    }
+
+    loop() {
+      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+      for (let i = this.particles.length - 1; i >= 0; i--) {
+        const p = this.particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.45;
+        p.vx *= 0.98;
+        p.rotation += p.vRot;
+        p.alpha -= 0.009;
+
+        if (p.alpha <= 0 || p.y > this.canvas.height) {
+          this.particles.splice(i, 1);
+          continue;
+        }
+
+        this.ctx.save();
+        this.ctx.globalAlpha = p.alpha;
+        this.ctx.translate(p.x, p.y);
+        this.ctx.rotate((p.rotation * Math.PI) / 180);
+        this.ctx.fillStyle = p.color;
+        this.ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.7);
+        this.ctx.restore();
+      }
+
+      if (this.particles.length > 0) {
+        this.animId = requestAnimationFrame(() => this.loop());
+      } else {
+        this.animId = null;
+      }
+    }
+  }
+
+  /* =====================================================================
+     МИНИ-ИГРА 1: КРЕСТИКИ-НОЛИКИ (ПОСЛЕ 3-Й ГЕНЕРАЦИИ)
+     ===================================================================== */
+  class TicTacToeGame {
+    constructor(overlay, sound) {
+      this.overlay = overlay;
+      this.sound = sound;
+      this.board = Array(9).fill(null);
+      this.cells = overlay.querySelectorAll('.ttt-cell');
+      this.statusText = document.getElementById('tttStatus');
+      this.resumeBtn = document.getElementById('tttResumeBtn');
+      this.isGameOver = false;
+
+      this.cells.forEach(cell => {
+        cell.addEventListener('click', () => this.handleCellClick(parseInt(cell.dataset.idx)));
+      });
+
+      this.resumeBtn.addEventListener('click', () => {
+        this.hide();
+      });
+    }
+
+    start() {
+      this.board = Array(9).fill(null);
+      this.isGameOver = false;
+      this.resumeBtn.style.display = 'none';
+      this.statusText.textContent = "Ваш ход: ❌";
+      this.cells.forEach(c => {
+        c.textContent = "";
+        c.className = "ttt-cell";
+      });
+      this.overlay.classList.add('active');
+      this.sound.playTone(600, 'square', 0.2, 0.2);
+    }
+
+    hide() {
+      this.overlay.classList.remove('active');
+    }
+
+    handleCellClick(idx) {
+      if (this.board[idx] || this.isGameOver) return;
+
+      // Ход игрока
+      this.board[idx] = 'X';
+      this.renderBoard();
+      this.sound.playTone(450, 'triangle', 0.1, 0.2);
+
+      const winner = this.checkWinner();
+      if (winner) {
+        this.endGame(winner);
+        return;
+      }
+
+      if (this.board.every(cell => cell !== null)) {
+        this.endGame('draw');
+        return;
+      }
+
+      // Ход бота
+      this.statusText.textContent = "Крупье думает... ⭕";
+      setTimeout(() => this.botMove(), 450);
+    }
+
+    botMove() {
+      if (this.isGameOver) return;
+      // ИИ: сначала ищем победу, потом блок игрока, иначе случайный выбор
+      let move = this.findBestSpot('O') || this.findBestSpot('X');
+      if (move === null) {
+        const available = this.board.map((v, i) => v === null ? i : null).filter(v => v !== null);
+        move = available[Math.floor(Math.random() * available.length)];
+      }
+
+      if (move !== undefined && move !== null) {
+        this.board[move] = 'O';
+        this.renderBoard();
+        this.sound.playTone(350, 'square', 0.1, 0.2);
+
+        const winner = this.checkWinner();
+        if (winner) {
+          this.endGame(winner);
+          return;
+        }
+
+        if (this.board.every(cell => cell !== null)) {
+          this.endGame('draw');
+          return;
+        }
+
+        this.statusText.textContent = "Ваш ход: ❌";
+      }
+    }
+
+    findBestSpot(symbol) {
+      const lines = [
+        [0,1,2],[3,4,5],[6,7,8],
+        [0,3,6],[1,4,7],[2,5,8],
+        [0,4,8],[2,4,6]
+      ];
+      for (let [a,b,c] of lines) {
+        const vals = [this.board[a], this.board[b], this.board[c]];
+        if (vals.filter(v => v === symbol).length === 2 && vals.includes(null)) {
+          if (this.board[a] === null) return a;
+          if (this.board[b] === null) return b;
+          if (this.board[c] === null) return c;
+        }
+      }
+      return null;
+    }
+
+    renderBoard() {
+      this.cells.forEach((cell, idx) => {
+        const val = this.board[idx];
+        cell.textContent = val ? (val === 'X' ? '❌' : '⭕') : '';
+        if (val) {
+          cell.classList.add(val.toLowerCase(), 'taken');
+        }
+      });
+    }
+
+    checkWinner() {
+      const lines = [
+        [0,1,2],[3,4,5],[6,7,8],
+        [0,3,6],[1,4,7],[2,5,8],
+        [0,4,8],[2,4,6]
+      ];
+      for (let [a,b,c] of lines) {
+        if (this.board[a] && this.board[a] === this.board[b] && this.board[a] === this.board[c]) {
+          return this.board[a];
+        }
+      }
+      return null;
+    }
+
+    endGame(result) {
+      this.isGameOver = true;
+      this.resumeBtn.style.display = 'block';
+
+      if (result === 'X') {
+        this.statusText.textContent = "ВЫ ПОБЕДИЛИ КРУПЬЕ! 🏆";
+        this.sound.playFanfare();
+      } else if (result === 'O') {
+        this.statusText.textContent = "Крупье победил! Но слот прощает 😉";
+        this.sound.playLaugh();
+      } else {
+        this.statusText.textContent = "Боевая ничья мастеров! 🤝";
+        this.sound.playTone(500, 'square', 0.2, 0.2);
+      }
+    }
+  }
+
+  /* =====================================================================
+     МИНИ-ИГРА 2: 8-BIT ТЕТРИС (ПОСЛЕ 10-Й ГЕНЕРАЦИИ)
+     ===================================================================== */
+  class TetrisMiniGame {
+    constructor(overlay, sound) {
+      this.overlay = overlay;
+      this.sound = sound;
+      this.canvas = document.getElementById('tetrisCanvas');
+      this.ctx = this.canvas.getContext('2d');
+      this.scoreText = document.getElementById('tetrisScore');
+      this.linesText = document.getElementById('tetrisLines');
+      this.exitBtn = document.getElementById('tetrisExitBtn');
+
+      this.cols = 10;
+      this.rows = 18;
+      this.gridSize = 20; // 200x360
+
+      this.board = [];
+      this.currentPiece = null;
+      this.dropCounter = 0;
+      this.dropInterval = 550;
+      this.lastTime = 0;
+      this.score = 0;
+      this.lines = 0;
+      this.animId = null;
+      this.isActive = false;
+
+      // Фигуры тетриса
+      this.pieces = [
+        { shape: [[1, 1, 1, 1]], color: '#00f3ff' }, // I
+        { shape: [[1, 1], [1, 1]], color: '#ffd700' }, // O
+        { shape: [[0, 1, 0], [1, 1, 1]], color: '#ff007f' }, // T
+        { shape: [[1, 0, 0], [1, 1, 1]], color: '#ff9900' }, // L
+        { shape: [[0, 0, 1], [1, 1, 1]], color: '#39ff14' }, // J
+        { shape: [[0, 1, 1], [1, 1, 0]], color: '#00e676' }, // S
+        { shape: [[1, 1, 0], [0, 1, 1]], color: '#ff1744' }  // Z
+      ];
+
+      this.exitBtn.addEventListener('click', () => this.hide());
+
+      // Управление кнопками
+      document.getElementById('tBtnLeft').addEventListener('click', () => this.move(-1));
+      document.getElementById('tBtnRight').addEventListener('click', () => this.move(1));
+      document.getElementById('tBtnRotate').addEventListener('click', () => this.rotate());
+      document.getElementById('tBtnDrop').addEventListener('click', () => this.drop());
+
+      // Управление клавиатурой
+      window.addEventListener('keydown', (e) => {
+        if (!this.isActive) return;
+        if (e.code === 'ArrowLeft') this.move(-1);
+        if (e.code === 'ArrowRight') this.move(1);
+        if (e.code === 'ArrowUp') this.rotate();
+        if (e.code === 'ArrowDown') this.drop();
+      });
+    }
+
+    start() {
+      this.board = Array.from({ length: this.rows }, () => Array(this.cols).fill(0));
+      this.score = 0;
+      this.lines = 0;
+      this.scoreText.textContent = '0';
+      this.linesText.textContent = '0';
+      this.spawnPiece();
+      this.overlay.classList.add('active');
+      this.isActive = true;
+      this.sound.playFanfare();
+
+      this.lastTime = performance.now();
+      this.dropCounter = 0;
+      this.loop = (time = 0) => {
+        if (!this.isActive) return;
+        const delta = time - this.lastTime;
+        this.lastTime = time;
+
+        this.dropCounter += delta;
+        if (this.dropCounter > this.dropInterval) {
+          this.drop();
+        }
+
+        this.draw();
+        this.animId = requestAnimationFrame(this.loop);
+      };
+      this.animId = requestAnimationFrame(this.loop);
+    }
+
+    hide() {
+      this.isActive = false;
+      if (this.animId) cancelAnimationFrame(this.animId);
+      this.overlay.classList.remove('active');
+    }
+
+    spawnPiece() {
+      const p = this.pieces[Math.floor(Math.random() * this.pieces.length)];
+      this.currentPiece = {
+        shape: p.shape,
+        color: p.color,
+        x: Math.floor(this.cols / 2) - Math.floor(p.shape[0].length / 2),
+        y: 0
+      };
+
+      if (this.collide(this.currentPiece.x, this.currentPiece.y, this.currentPiece.shape)) {
+        // Game Over
+        this.sound.playLaugh();
+        this.exitBtn.textContent = `ИГРА ОКОНЧЕНА! (СЧЁТ: ${this.score}) • В КАЗИНО 🎰`;
+      }
+    }
+
+    collide(x, y, shape) {
+      for (let r = 0; r < shape.length; r++) {
+        for (let c = 0; c < shape[r].length; c++) {
+          if (shape[r][c]) {
+            const newX = x + c;
+            const newY = y + r;
+            if (newX < 0 || newX >= this.cols || newY >= this.rows) return true;
+            if (newY >= 0 && this.board[newY][newX]) return true;
+          }
+        }
+      }
+      return false;
+    }
+
+    move(dir) {
+      if (!this.collide(this.currentPiece.x + dir, this.currentPiece.y, this.currentPiece.shape)) {
+        this.currentPiece.x += dir;
+        this.sound.playTone(300, 'square', 0.04, 0.05);
+      }
+    }
+
+    rotate() {
+      const s = this.currentPiece.shape;
+      const rotated = s[0].map((_, i) => s.map(row => row[i]).reverse());
+      if (!this.collide(this.currentPiece.x, this.currentPiece.y, rotated)) {
+        this.currentPiece.shape = rotated;
+        this.sound.playTone(440, 'square', 0.06, 0.08);
+      }
+    }
+
+    drop() {
+      if (!this.collide(this.currentPiece.x, this.currentPiece.y + 1, this.currentPiece.shape)) {
+        this.currentPiece.y++;
+      } else {
+        this.merge();
+        this.clearLines();
+        this.spawnPiece();
+      }
+      this.dropCounter = 0;
+    }
+
+    merge() {
+      const s = this.currentPiece.shape;
+      for (let r = 0; r < s.length; r++) {
+        for (let c = 0; c < s[r].length; c++) {
+          if (s[r][c]) {
+            const ny = this.currentPiece.y + r;
+            const nx = this.currentPiece.x + c;
+            if (ny >= 0 && ny < this.rows) {
+              this.board[ny][nx] = this.currentPiece.color;
+            }
+          }
+        }
+      }
+      this.sound.playTone(200, 'triangle', 0.08, 0.1);
+    }
+
+    clearLines() {
+      let linesCleared = 0;
+      for (let r = this.rows - 1; r >= 0; r--) {
+        if (this.board[r].every(cell => cell !== 0)) {
+          this.board.splice(r, 1);
+          this.board.unshift(Array(this.cols).fill(0));
+          linesCleared++;
+          r++; // проверяем ту же строку повторно
+        }
+      }
+      if (linesCleared > 0) {
+        this.lines += linesCleared;
+        this.score += linesCleared * 100 * linesCleared;
+        this.linesText.textContent = this.lines;
+        this.scoreText.textContent = this.score;
+        this.sound.playFanfare();
+      }
+    }
+
+    draw() {
+      this.ctx.fillStyle = '#0b0217';
+      this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+      // Сетка
+      this.ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+      for (let r = 0; r < this.rows; r++) {
+        for (let c = 0; c < this.cols; c++) {
+          this.ctx.strokeRect(c * this.gridSize, r * this.gridSize, this.gridSize, this.gridSize);
+        }
+      }
+
+      // Зафиксированные блоки
+      for (let r = 0; r < this.rows; r++) {
+        for (let c = 0; c < this.cols; c++) {
+          if (this.board[r][c]) {
+            this.drawBlock(c, r, this.board[r][c]);
+          }
+        }
+      }
+
+      // Падающая деталь
+      if (this.currentPiece) {
+        const s = this.currentPiece.shape;
+        for (let r = 0; r < s.length; r++) {
+          for (let c = 0; c < s[r].length; c++) {
+            if (s[r][c]) {
+              this.drawBlock(this.currentPiece.x + c, this.currentPiece.y + r, this.currentPiece.color);
+            }
+          }
+        }
+      }
+    }
+
+    drawBlock(c, r, color) {
+      const x = c * this.gridSize;
+      const y = r * this.gridSize;
+      this.ctx.fillStyle = color;
+      this.ctx.fillRect(x + 1, y + 1, this.gridSize - 2, this.gridSize - 2);
+
+      // Блик 8-bit
+      this.ctx.fillStyle = 'rgba(255,255,255,0.3)';
+      this.ctx.fillRect(x + 2, y + 2, this.gridSize - 4, 3);
+    }
+  }
+
+  /* =====================================================================
+     ГЛАВНАЯ СВЯЗКА КАЗИНО И ИГР
+     ===================================================================== */
+  const sound = new SoundEngine();
+  const confetti = new ConfettiEngine(document.getElementById('confettiCanvas'));
+  const tttGame = new TicTacToeGame(document.getElementById('tttOverlay'), sound);
+  const tetrisGame = new TetrisMiniGame(document.getElementById('tetrisOverlay'), sound);
+
+  let selectedGender = 'all';
+  let isSpinning = false;
+  let spinCount = 0;
+  let lastCombination = "";
+  const history = [];
+
+  const spinBtn = document.getElementById('spinBtn');
+  const copyBtn = document.getElementById('copyBtn');
+  const shareBtn = document.getElementById('shareBtn');
+  const musicToggleBtn = document.getElementById('musicToggleBtn');
+  const soundToggleBtn = document.getElementById('soundToggleBtn');
+  const genderBtns = document.querySelectorAll('.gender-btn');
+
+  const reelStrips = {
+    last: document.getElementById('reelStripLast'),
+    first: document.getElementById('reelStripFirst'),
+    middle: document.getElementById('reelStripMiddle')
+  };
+
+  const resultBadge = document.getElementById('resultBadge');
+  const resultTitle = document.getElementById('resultTitle');
+  const spinCountText = document.getElementById('spinCountText');
+  const historyList = document.getElementById('historyList');
+  const toast = document.getElementById('toast');
+
+  // Лампочки
+  const bulbsContainer = document.getElementById('bulbsContainer');
+  for (let i = 0; i < 14; i++) {
+    const bulb = document.createElement('div');
+    bulb.className = `bulb glow-${(i % 4) + 1}`;
+    bulbsContainer.appendChild(bulb);
+  }
+
+  setInterval(() => {
+    const bulbs = bulbsContainer.children;
+    for (let i = 0; i < bulbs.length; i++) {
+      const currentClass = Array.from(bulbs[i].classList).find(c => c.startsWith('glow-'));
+      const nextNum = (parseInt(currentClass.split('-')[1]) % 4) + 1;
+      bulbs[i].className = `bulb glow-${nextNum}`;
+    }
+  }, 350);
+
+  genderBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      genderBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      selectedGender = btn.dataset.gender;
+    });
+  });
+
+  soundToggleBtn.addEventListener('click', () => {
+    sound.soundEnabled = !sound.soundEnabled;
+    soundToggleBtn.textContent = sound.soundEnabled ? 'ЗВУКИ: ВКЛ 🔊' : 'ЗВУКИ: ВЫКЛ 🔇';
+    soundToggleBtn.classList.toggle('active', !sound.soundEnabled);
+  });
+
+  musicToggleBtn.addEventListener('click', () => {
+    const isPlaying = sound.toggleMusic();
+    musicToggleBtn.textContent = isPlaying ? 'МУЗЫКА: КАЛИНКА 🎵' : 'МУЗЫКА: ВЫКЛ 🎵';
+    musicToggleBtn.classList.toggle('active', isPlaying);
+  });
+
+  function showToast(msg) {
+    toast.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2000);
+  }
+
+  function getRandom(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
+  }
+
+  function spinReel(strip, finalValue, durationMs, onStop) {
+    const startTime = performance.now();
+    let clickInterval = 70;
+    let lastClick = 0;
+
+    function frame(now) {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / durationMs, 1);
+
+      if (now - lastClick > clickInterval) {
+        sound.playClick();
+        lastClick = now;
+        clickInterval = 60 + progress * 140;
+      }
+
+      if (progress < 1) {
+        const rand = getRandom(DB.male.lastNames);
+        strip.innerHTML = `<div class="reel-item">${rand}</div>`;
+        requestAnimationFrame(frame);
+      } else {
+        strip.innerHTML = `<div class="reel-item highlight">${finalValue}</div>`;
+        sound.playReelLock();
+        if (onStop) onStop();
+      }
+    }
+    requestAnimationFrame(frame);
+  }
+
+  function runSlotMachine() {
+    if (isSpinning) return;
+    isSpinning = true;
+    spinBtn.disabled = true;
+
+    sound.initCtx();
+
+    resultBadge.classList.remove('show');
+    resultTitle.classList.remove('show');
+    resultTitle.textContent = "Судьба вращает барабаны...";
+
+    let actualGender = selectedGender;
+    if (actualGender === 'all') {
+      actualGender = Math.random() > 0.5 ? 'm' : 'f';
+    }
+    const genderData = actualGender === 'm' ? DB.male : DB.female;
+
+    let l, f, m, combo;
+    do {
+      l = getRandom(genderData.lastNames);
+      f = getRandom(genderData.firstNames);
+      m = getRandom(genderData.middleNames);
+      combo = `${l} ${f} ${m}`;
+    } while (combo === lastCombination && genderData.lastNames.length > 1);
+
+    lastCombination = combo;
+    const assignedTitle = getRandom(DB.titles);
+
+    spinReel(reelStrips.last, l, 2200);
+
+    setTimeout(() => {
+      spinReel(reelStrips.first, f, 800);
+    }, 2200);
+
+    setTimeout(() => {
+      spinReel(reelStrips.middle, m, 800, () => {
+        finishSpin(combo, assignedTitle);
+      });
+    }, 3000);
+  }
+
+  function finishSpin(fullFIO, title) {
+    isSpinning = false;
+    spinBtn.disabled = false;
+    spinCount++;
+    spinCountText.textContent = spinCount;
+
+    sound.playFanfare();
+    setTimeout(() => sound.playLaugh(), 350);
+    confetti.fire();
+
+    resultBadge.classList.add('show');
+    resultTitle.textContent = `«${title}»`;
+    resultTitle.classList.add('show');
+
+    addToHistory(fullFIO, title);
+
+    // СЮРПРИЗ 1: Ровно после 3-й крутки — Крестики-Нолики
+    if (spinCount === 3) {
+      setTimeout(() => {
+        tttGame.start();
+      }, 1400);
+    }
+
+    // СЮРПРИЗ 2: Ровно после 10-й крутки — 8-битный Тетрис
+    if (spinCount === 10) {
+      setTimeout(() => {
+        tetrisGame.start();
+      }, 1400);
+    }
+  }
+
+  function addToHistory(fio, title) {
+    history.unshift({ fio, title });
+    if (history.length > 5) history.pop();
+
+    historyList.innerHTML = history.map(item => `
+      <li class="history-item">
+        <strong>${item.fio}</strong>
+        <span style="opacity: 0.8; font-size: 11px;">${item.title.substring(0, 32)}...</span>
+      </li>
+    `).join('');
+  }
+
+  copyBtn.addEventListener('click', async () => {
+    if (!lastCombination) {
+      showToast("Сначала покрутите автомат!");
+      return;
+    }
+    const textToCopy = `${lastCombination}\nЗвание: ${resultTitle.textContent}`;
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(textToCopy);
+      } else {
+        const textarea = document.createElement('textarea');
+        textarea.value = textToCopy;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+      }
+      showToast("ФИО скопировано в буфер! 📋");
+    } catch (e) {
+      showToast("Ошибка копирования");
+    }
+  });
+
+  shareBtn.addEventListener('click', async () => {
+    if (!lastCombination) {
+      showToast("Сначала покрутите автомат!");
+      return;
+    }
+    const text = `Моё новое имя в Казино личностей:\n🎰 ${lastCombination}!\nЗвание: ${resultTitle.textContent}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: "Генератор смешных ФИО", text: text });
+      } catch (err) {}
+    } else {
+      copyBtn.click();
+    }
+  });
+
+  spinBtn.addEventListener('click', runSlotMachine);
+
+  window.addEventListener('keydown', (e) => {
+    if (e.code === 'Space' && !isSpinning && !tttGame.overlay.classList.contains('active') && !tetrisGame.isActive) {
+      e.preventDefault();
+      runSlotMachine();
+    }
+  });
+  </script>
+</body>
+</html>
